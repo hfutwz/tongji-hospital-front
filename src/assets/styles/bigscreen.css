@@ -1,0 +1,407 @@
+/* 大屏可视化专用样式 */
+/* 文件路径: src/assets/styles/bigscreen.css */
+
+/* 全局大屏样式重置 */
+.bigscreen-dashboard * {
+  box-sizing: border-box;
+}
+
+/* CSS Grid布局强制样式 */
+.bigscreen-dashboard .charts-grid {
+  display: grid !important;
+  grid-template-columns: 2fr 1fr 1fr 1fr !important;
+  grid-template-rows: 1fr 1fr !important;
+  gap: 20px !important;
+  overflow: hidden !important;
+  min-height: 0 !important;
+}
+
+/* 图表Grid定位 */
+.bigscreen-dashboard .chart-heatmap {
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+}
+
+.bigscreen-dashboard .chart-pie-iss {
+  grid-column: 2 !important;
+  grid-row: 1 !important;
+}
+
+.bigscreen-dashboard .chart-pie-gcs {
+  grid-column: 3 !important;
+  grid-row: 1 !important;
+}
+
+.bigscreen-dashboard .chart-body {
+  grid-column: 4 !important;
+  grid-row: 1 / 3 !important; /* 跨2行 */
+}
+
+.bigscreen-dashboard .chart-bar {
+  grid-column: 1 !important;
+  grid-row: 2 !important;
+}
+
+.bigscreen-dashboard .chart-pie-rts {
+  grid-column: 2 !important;
+  grid-row: 2 !important;
+}
+
+.bigscreen-dashboard .chart-sunburst {
+  grid-column: 3 !important;
+  grid-row: 2 !important;
+}
+
+/* 图表组件通用样式优化 */
+.bigscreen-dashboard .chart-item {
+  position: relative;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.bigscreen-dashboard .chart-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(30, 58, 138, 0.05) 100%);
+  border-radius: 12px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* 图表标题样式 */
+.bigscreen-dashboard .chart-header {
+  background: linear-gradient(90deg, rgba(30, 58, 138, 0.8) 0%, rgba(59, 130, 246, 0.6) 100%) !important;
+  color: #ffffff !important;
+  padding: 15px 20px !important;
+  border-radius: 12px 12px 0 0 !important;
+  border-bottom: 1px solid rgba(59, 130, 246, 0.3) !important;
+}
+
+.bigscreen-dashboard .chart-title {
+  color: #ffffff !important;
+  font-size: 18px !important;
+  font-weight: 600 !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+}
+
+.bigscreen-dashboard .chart-subtitle {
+  color: #cbd5e1 !important;
+  font-size: 14px !important;
+  margin-top: 5px !important;
+}
+
+/* 图表内容区域 */
+.bigscreen-dashboard .chart-content {
+  background: transparent !important;
+  padding: 20px !important;
+}
+
+.bigscreen-dashboard .chart-wrapper {
+  background: transparent !important;
+}
+
+/* ECharts 图表样式优化 */
+.bigscreen-dashboard .chart {
+  background: transparent !important;
+}
+
+/* 热力图专用样式 */
+.bigscreen-dashboard .monthly-heatmap-container {
+  background: transparent !important;
+}
+
+.bigscreen-dashboard .monthly-heatmap-container .chart-header {
+  background: linear-gradient(90deg, rgba(30, 58, 138, 0.8) 0%, rgba(59, 130, 246, 0.6) 100%) !important;
+  color: #ffffff !important;
+}
+
+.bigscreen-dashboard .monthly-heatmap-container .legend {
+  background: rgba(15, 23, 42, 0.8) !important;
+  border-radius: 8px !important;
+  padding: 15px !important;
+  margin-top: 15px !important;
+}
+
+.bigscreen-dashboard .monthly-heatmap-container .legend-labels {
+  color: #e5e7eb !important;
+}
+
+.bigscreen-dashboard .monthly-heatmap-container .legend-info {
+  color: #cbd5e1 !important;
+}
+
+/* 饼图专用样式 */
+.bigscreen-dashboard .pie-chart-container {
+  background: transparent !important;
+}
+
+.bigscreen-dashboard .pie-chart-container .chart-header {
+  background: linear-gradient(90deg, rgba(30, 58, 138, 0.8) 0%, rgba(59, 130, 246, 0.6) 100%) !important;
+  color: #ffffff !important;
+}
+
+/* 旭日图专用样式 */
+.bigscreen-dashboard .sunburst-container {
+  background: transparent !important;
+}
+
+.bigscreen-dashboard .sunburst-container .chart-header {
+  background: linear-gradient(90deg, rgba(30, 58, 138, 0.8) 0%, rgba(59, 130, 246, 0.6) 100%) !important;
+  color: #ffffff !important;
+}
+
+/* 身体热力图专用样式 */
+.bigscreen-dashboard .population-heatmap-container {
+  background: transparent !important;
+}
+
+.bigscreen-dashboard .population-heatmap-container .chart-header {
+  background: linear-gradient(90deg, rgba(30, 58, 138, 0.8) 0%, rgba(59, 130, 246, 0.6) 100%) !important;
+  color: #ffffff !important;
+}
+
+/* 加载状态样式 */
+.bigscreen-dashboard .loading-container {
+  background: rgba(15, 23, 42, 0.9) !important;
+  color: #ffffff !important;
+}
+
+.bigscreen-dashboard .el-loading-text {
+  color: #ffffff !important;
+}
+
+/* 无数据状态样式 */
+.bigscreen-dashboard .no-data {
+  background: rgba(15, 23, 42, 0.8) !important;
+  color: #94a3b8 !important;
+  border-radius: 8px !important;
+}
+
+/* 图例样式优化 */
+.bigscreen-dashboard .legend-scale {
+  background: rgba(15, 23, 42, 0.6) !important;
+  border-radius: 6px !important;
+  padding: 10px !important;
+}
+
+.bigscreen-dashboard .legend-labels li {
+  color: #e5e7eb !important;
+  font-size: 12px !important;
+}
+
+/* 信息提示样式 */
+.bigscreen-dashboard .info-item {
+  color: #cbd5e1 !important;
+}
+
+.bigscreen-dashboard .info-label {
+  color: #94a3b8 !important;
+}
+
+.bigscreen-dashboard .info-value {
+  color: #ffffff !important;
+  font-weight: 600 !important;
+}
+
+/* 响应式字体大小 */
+@media (min-width: 1920px) {
+  .bigscreen-dashboard .chart-title {
+    font-size: 20px !important;
+  }
+  
+  .bigscreen-dashboard .chart-subtitle {
+    font-size: 16px !important;
+  }
+  
+  .bigscreen-dashboard .legend-labels li {
+    font-size: 14px !important;
+  }
+}
+
+@media (min-width: 2560px) {
+  .bigscreen-dashboard .chart-title {
+    font-size: 24px !important;
+  }
+  
+  .bigscreen-dashboard .chart-subtitle {
+    font-size: 18px !important;
+  }
+  
+  .bigscreen-dashboard .legend-labels li {
+    font-size: 16px !important;
+  }
+}
+
+@media (min-width: 3840px) {
+  .bigscreen-dashboard .chart-title {
+    font-size: 28px !important;
+  }
+  
+  .bigscreen-dashboard .chart-subtitle {
+    font-size: 20px !important;
+  }
+  
+  .bigscreen-dashboard .legend-labels li {
+    font-size: 18px !important;
+  }
+}
+
+/* 动画效果 */
+.bigscreen-dashboard .chart-item {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 悬停效果 */
+.bigscreen-dashboard .chart-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(59, 130, 246, 0.3) !important;
+}
+
+/* 数据更新动画 */
+.bigscreen-dashboard .stat-value {
+  transition: all 0.3s ease;
+}
+
+.bigscreen-dashboard .stat-value.updating {
+  animation: pulse 0.5s ease-in-out;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+/* 滚动条隐藏（如果出现） */
+.bigscreen-dashboard::-webkit-scrollbar {
+  display: none;
+}
+
+.bigscreen-dashboard {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Element UI 组件样式覆盖 */
+.bigscreen-dashboard .el-date-editor {
+  background-color: rgba(30, 41, 59, 0.8) !important;
+  border-color: rgba(59, 130, 246, 0.3) !important;
+}
+
+.bigscreen-dashboard .el-date-editor .el-input__inner {
+  background-color: transparent !important;
+  border: none !important;
+  color: #ffffff !important;
+}
+
+.bigscreen-dashboard .el-date-editor .el-input__prefix {
+  color: #60a5fa !important;
+}
+
+.bigscreen-dashboard .el-date-editor .el-input__suffix {
+  color: #60a5fa !important;
+}
+
+.bigscreen-dashboard .el-select .el-input__inner {
+  background-color: rgba(30, 41, 59, 0.8) !important;
+  border-color: rgba(59, 130, 246, 0.3) !important;
+  color: #ffffff !important;
+}
+
+.bigscreen-dashboard .el-select .el-input__suffix {
+  color: #60a5fa !important;
+}
+
+.bigscreen-dashboard .el-button--primary {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8) !important;
+  border-color: #3b82f6 !important;
+  color: #ffffff !important;
+}
+
+.bigscreen-dashboard .el-button--primary:hover {
+  background: linear-gradient(135deg, #2563eb, #1e40af) !important;
+  border-color: #2563eb !important;
+}
+
+/* 下拉菜单样式 */
+.bigscreen-dashboard .el-select-dropdown {
+  background-color: rgba(15, 23, 42, 0.95) !important;
+  border-color: rgba(59, 130, 246, 0.3) !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+.bigscreen-dashboard .el-select-dropdown .el-select-dropdown__item {
+  color: #e5e7eb !important;
+}
+
+.bigscreen-dashboard .el-select-dropdown .el-select-dropdown__item:hover {
+  background-color: rgba(59, 130, 246, 0.2) !important;
+}
+
+.bigscreen-dashboard .el-select-dropdown .el-select-dropdown__item.selected {
+  background-color: rgba(59, 130, 246, 0.3) !important;
+  color: #ffffff !important;
+}
+
+/* 日期选择器样式 */
+.bigscreen-dashboard .el-picker-panel {
+  background-color: rgba(15, 23, 42, 0.95) !important;
+  border-color: rgba(59, 130, 246, 0.3) !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+.bigscreen-dashboard .el-picker-panel .el-date-table td {
+  color: #e5e7eb !important;
+}
+
+.bigscreen-dashboard .el-picker-panel .el-date-table td:hover {
+  background-color: rgba(59, 130, 246, 0.2) !important;
+}
+
+.bigscreen-dashboard .el-picker-panel .el-date-table td.current {
+  background-color: rgba(59, 130, 246, 0.3) !important;
+  color: #ffffff !important;
+}
+
+.bigscreen-dashboard .el-picker-panel .el-date-table td.today {
+  color: #60a5fa !important;
+}
+
+/* 消息提示样式 */
+.bigscreen-dashboard .el-message {
+  background-color: rgba(15, 23, 42, 0.95) !important;
+  border-color: rgba(59, 130, 246, 0.3) !important;
+  color: #ffffff !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+.bigscreen-dashboard .el-message--success {
+  background-color: rgba(16, 185, 129, 0.9) !important;
+}
+
+.bigscreen-dashboard .el-message--error {
+  background-color: rgba(239, 68, 68, 0.9) !important;
+}
+
+.bigscreen-dashboard .el-message--warning {
+  background-color: rgba(245, 158, 11, 0.9) !important;
+}
+
+.bigscreen-dashboard .el-message--info {
+  background-color: rgba(59, 130, 246, 0.9) !important;
+}

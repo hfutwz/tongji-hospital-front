@@ -1,0 +1,70 @@
+2.2 测试/辅助开发组件（Show* 开头的组件）
+src/components/ShowInjuryRecord.vue
+说明：测试/辅助开发组件，前端未使用
+src/components/ShowInjuryAnalysis.vue
+说明：测试/辅助开发组件，前端未使用
+src/components/ShowInterDistribution.vue
+说明：测试/辅助开发组件，前端未使用
+src/components/ShowInterTime.vue
+说明：测试/辅助开发组件，前端未使用
+src/components/ShowInterventionCloud.vue
+说明：测试/辅助开发组件，前端未使用
+src/components/ShowIssBar.vue
+说明：测试/辅助开发组件，前端未使用
+src/components/ShowPatientFlowSankey.vue
+说明：测试/辅助开发组件，前端未使用
+src/components/ShowSeasonalBarChart.vue
+说明：测试/辅助开发组件，前端未使用
+src/components/ShowTimeperiods.vue
+说明：测试/辅助开发组件，前端未使用
+
+
+2.3 其他未使用的组件
+src/components/BigScreenNav.vue
+说明：大屏导航组件，前端未使用
+src/components/DashboardWidget.vue
+说明：驾驶舱窗口组件，前端未使用
+src/components/PatientList.vue
+说明：患者列表组件，实际使用的是 PatientListPage.vue
+src/components/BodyShow.vue
+说明：身体展示组件，前端未使用
+
+一、未使用的页面视图（Views）
+src/views/Dashboard.vue
+状态：在路由中定义（/dashboard），但导航菜单中没有链接
+说明：数据驾驶舱页面，实际使用的是 DataVisualizationDashboard.vue（/bigscreen）
+二、未使用的组件（Components）
+2.1 仅被 Dashboard.vue 使用的组件（Dashboard 未使用，这些组件也未使用）
+src/components/MonthlyTimeHeatmap.vue
+说明：仅在 Dashboard.vue 中使用，实际使用的是 MonthlyTimeHeatmapCore.vue
+src/components/InjuryCauseChart.vue
+说明：仅在 Dashboard.vue 中使用，实际使用的是 InjuryCauseDistributionChartCore.vue
+src/components/InjuryCauseDistributionChart.vue
+说明：仅在 Dashboard.vue 中使用，实际使用的是 InjuryCauseDistributionChartCore.vue
+
+***index.js做了相应修改
+src/views/Dashboard.vue 原驾驶舱，格式有问题。换成/bigscreen 可视化大屏了
+
+
+2. 未使用的组件文件
+在 components 目录中：
+BigScreenNav.vue - 未使用
+DashboardWidget.vue - 未使用
+PatientList.vue - 未使用（实际使用的是 PatientListPage.vue）
+注意：BodyShow.vue 不在当前 components 列表中，可能已被删除。
+
+一、可以删除的测试HTML文件（13个）
+这些是独立的测试页面，用于开发调试，不是 Vue 项目的一部分：
+quick_test.html - Dashboard查询问题快速测试页面
+dashboard_query_test.html - Dashboard查询功能测试页面
+dashboard_query_diagnosis.html - Dashboard查询诊断测试页面
+dashboard_query_fix_test.html - Dashboard查询修复测试页面
+auto_update_test.html - 自动更新功能测试页面
+integration_test.html - Statistics API联调测试页面
+test_statistics_api_direct.html - Statistics API直接测试页面
+statistics_api_fix_test.html - Statistics API修复测试页面
+query_button_fix_test.html - 查询按钮修复测试页面
+fusion_function_test.html - 融合功能测试页面
+test_sunburst_fix.html - Sunburst图表修复测试页面
+test_dashboard_stats.html - Dashboard统计测试页面
+test.html - 高德地图Vue组件demo测试页面
