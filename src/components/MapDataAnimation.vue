@@ -75,16 +75,19 @@ export default {
     };
   },
   methods: {
-    /* ---------------- 百度地图相关 ---------------- */
+    /* ---------------- 腾讯地图相关 ---------------- */
     initMap() {
-      // 初始化百度地图
-      this.map = new BMap.Map('mapContainer');
-      const point = new BMap.Point(121.4737, 31.2304);
-      this.map.centerAndZoom(point, 11);
-      this.map.enableScrollWheelZoom(true);
-      
-      // 初始化百度热力图
-      const heatmapOverlay = new BMapLib.HeatmapOverlay({
+      // 初始化腾讯地图
+      const center = new qq.maps.LatLng(31.2304, 121.4737);
+      this.map = new qq.maps.Map(document.getElementById('mapContainer'), {
+        center,
+        zoom: 11,
+        scrollwheel: true
+      });
+
+      // 初始化腾讯热力图
+      this.heatmap = new qq.maps.visualization.Heat({
+        map: this.map,
         radius: 25,
         opacity: [0, 0.8],
         gradient: {
@@ -94,28 +97,41 @@ export default {
           0.9: 'red',
         },
       });
-      this.map.addOverlay(heatmapOverlay);
-      this.heatmap = heatmapOverlay;
     },
     /* 初始化单个 mini 地图（缩略图） */
     initMiniMap(index, points) {
       this.$nextTick(() => {
-        const mini = new BMap.Map(`miniMap${index}`);
-        const point = new BMap.Point(121.4737, 31.2304);
-        mini.centerAndZoom(point, 9);
-        mini.disableDragging();
-        mini.disableDoubleClickZoom();
-        mini.disableKeyboard();
-        
-        // 缩略图也用热力图
-        const miniHeatmap = new BMapLib.HeatmapOverlay({
+        const container = document.getElementById(`miniMap${index}`);
+        if (!container) return;
+
+        const center = new qq.maps.LatLng(31.2304, 121.4737);
+        const mini = new qq.maps.Map(container, {
+          center,
+          zoom: 9,
+          draggable: false,
+          scrollwheel: false,
+          disableDoubleClickZoom: true,
+          keyboardShortcuts: false
+        });
+
+        const miniHeatmap = new qq.maps.visualization.Heat({
+          map: mini,
           radius: 15,
           opacity: [0, 0.6],
           gradient: { 0.3: 'blue', 0.5: 'green', 0.7: 'yellow', 0.9: 'red' },
         });
-        mini.addOverlay(miniHeatmap);
-        miniHeatmap.setDataSet({ data: points, max: 1 });
+
+        const dataPoints = (points || []).map(p => ({
+          lat: Number(p.lat),
+          lng: Number(p.lng),
+          value: Number(p.count) || 0
+        })).filter(p => !Number.isNaN(p.lat) && !Number.isNaN(p.lng));
+
+        const max = dataPoints.reduce((m, p) => Math.max(m, p.value), 0) || 1;
+        miniHeatmap.setData({ min: 0, max, data: dataPoints });
+
         this.dayDataList[index].miniMap = mini;
+        this.dayDataList[index].miniHeatmap = miniHeatmap;
       });
     },
 
@@ -198,7 +214,14 @@ export default {
       this.currentMonth = item.month;
       this.currentMonthTotal = item.total ?? null;
       if (this.heatmap) {
-        this.heatmap.setDataSet({ data: item.points, max: 1 });
+        const dataPoints = (item.points || []).map(p => ({
+          lat: Number(p.lat),
+          lng: Number(p.lng),
+          value: Number(p.count) || 0
+        })).filter(p => !Number.isNaN(p.lat) && !Number.isNaN(p.lng));
+
+        const max = dataPoints.reduce((m, p) => Math.max(m, p.value), 0) || 1;
+        this.heatmap.setData({ min: 0, max, data: dataPoints });
       }
     },
     /* 计算偏移，让当前 slide 居中 */

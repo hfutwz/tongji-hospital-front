@@ -121,19 +121,22 @@ export default {
   },
   methods: {
     initMap() {
-      // 初始化百度地图
-      this.map = new BMap.Map("hotMap");
-      const point = new BMap.Point(121.4737, 31.2304);
-      this.map.centerAndZoom(point, 11);
-      this.map.enableScrollWheelZoom(true);
-      
+      // 初始化腾讯地图
+      const center = new qq.maps.LatLng(31.2304, 121.4737);
+      this.map = new qq.maps.Map(document.getElementById('hotMap'), {
+        center,
+        zoom: 11,
+        scrollwheel: true
+      });
+
       // 添加点击事件监听
-      this.map.addEventListener('click', (e) => {
+      qq.maps.event.addListener(this.map, 'click', (e) => {
         this.handleMapClick(e);
       });
-      
-      // 初始化百度热力图
-      const heatmapOverlay = new BMapLib.HeatmapOverlay({
+
+      // 初始化腾讯热力图（可视化库）
+      this.heatmap = new qq.maps.visualization.Heat({
+        map: this.map,
         radius: 25,
         opacity: [0, 0.8],
         gradient: {
@@ -141,19 +144,20 @@ export default {
           0.5: "green",
           0.7: "yellow",
           0.9: "red",
-        },
+        }
       });
-      this.map.addOverlay(heatmapOverlay);
-      this.heatmap = heatmapOverlay;
+
       this.query();
     },
     
     // 处理地图点击事件
     handleMapClick(e) {
-      const point = e.point;
+      const latLng = e && e.latLng;
+      if (!latLng) return;
+
       this.clickedPoint = {
-        lng: point.lng,
-        lat: point.lat
+        lng: latLng.getLng(),
+        lat: latLng.getLat()
       };
       
       // 请求该点的患者数据
@@ -223,11 +227,13 @@ export default {
     setHeatmapData() {
       if (!this.heatmap) return;
       const dataPoints = this.heatmapData.map(item => ({
-        lng: item.longitude,
-        lat: item.latitude,
-        count: item.count
-      }));
-      this.heatmap.setDataSet({ data: dataPoints, max: 3 });
+        lat: Number(item.latitude),
+        lng: Number(item.longitude),
+        value: Number(item.count) || 0
+      })).filter(p => !Number.isNaN(p.lat) && !Number.isNaN(p.lng));
+
+      const max = dataPoints.reduce((m, p) => Math.max(m, p.value), 0) || 1;
+      this.heatmap.setData({ min: 0, max, data: dataPoints });
     },
     
     toggleSeason(val) {
