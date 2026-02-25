@@ -138,8 +138,8 @@ export default {
       this.heatmap = new qq.maps.visualization.Heat({
         map: this.map,
         radius: 25,
-        opacity: [0, 0.8],
-        gradient: {
+        opacity: 0.8,
+        gradientColor: {
           0.3: "blue",
           0.5: "green",
           0.7: "yellow",
