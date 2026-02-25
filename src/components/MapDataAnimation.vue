@@ -61,6 +61,7 @@ export default {
     return {
       map: null,          // 主地图
       heatmap: null,      // 主热力图层
+      dots: null,         // 主散点层（红点兜底）
       selectedYear: '',   // 选择年份
       yearOptions: [],    // 年份下拉（当前年起往前10年）
       dayDataList: [],    // 月份数据 & miniMap 实例
@@ -89,13 +90,25 @@ export default {
       this.heatmap = new qq.maps.visualization.Heat({
         map: this.map,
         radius: 25,
-        opacity: 0.8,
-        gradientColor: {
+        opacity: [0, 0.8],
+        gradient: {
           0.3: 'blue',
           0.5: 'green',
           0.7: 'yellow',
           0.9: 'red',
         },
+        zIndex: 10
+      });
+
+      // 初始化腾讯散点图（红点兜底）
+      this.dots = new qq.maps.visualization.Dots({
+        map: this.map,
+        style: {
+          fillColor: "rgba(220, 0, 0, 0.85)",
+          strokeWidth: 0,
+          radius: 5
+        },
+        zIndex: 20
       });
     },
     /* 初始化单个 mini 地图（缩略图） */
@@ -117,8 +130,9 @@ export default {
         const miniHeatmap = new qq.maps.visualization.Heat({
           map: mini,
           radius: 15,
-          opacity: 0.6,
-          gradientColor: { 0.3: 'blue', 0.5: 'green', 0.7: 'yellow', 0.9: 'red' },
+          opacity: [0, 0.6],
+          gradient: { 0.3: 'blue', 0.5: 'green', 0.7: 'yellow', 0.9: 'red' },
+          zIndex: 10
         });
 
         const dataPoints = (points || []).map(p => ({
@@ -129,6 +143,9 @@ export default {
 
         const max = dataPoints.reduce((m, p) => Math.max(m, p.value), 0) || 1;
         miniHeatmap.setData({ min: 0, max, data: dataPoints });
+        if (typeof miniHeatmap.show === 'function') {
+          miniHeatmap.show();
+        }
 
         this.dayDataList[index].miniMap = mini;
         this.dayDataList[index].miniHeatmap = miniHeatmap;
@@ -222,6 +239,21 @@ export default {
 
         const max = dataPoints.reduce((m, p) => Math.max(m, p.value), 0) || 1;
         this.heatmap.setData({ min: 0, max, data: dataPoints });
+        if (typeof this.heatmap.show === 'function') {
+          this.heatmap.show();
+        }
+      }
+
+      if (this.dots) {
+        const dotData = (item.points || []).map(p => ({
+          lat: Number(p.lat),
+          lng: Number(p.lng)
+        })).filter(p => !Number.isNaN(p.lat) && !Number.isNaN(p.lng));
+
+        this.dots.setData(dotData);
+        if (typeof this.dots.show === 'function') {
+          this.dots.show();
+        }
       }
     },
     /* 计算偏移，让当前 slide 居中 */

@@ -91,6 +91,7 @@ export default {
     return {
       map: null,
       heatmap: null,
+      dots: null,
       heatmapData: [],
       years: [],
       selectedYears: [],
@@ -138,13 +139,25 @@ export default {
       this.heatmap = new qq.maps.visualization.Heat({
         map: this.map,
         radius: 25,
-        opacity: 0.8,
-        gradientColor: {
+        opacity: [0, 0.8],
+        gradient: {
           0.3: "blue",
           0.5: "green",
           0.7: "yellow",
           0.9: "red",
-        }
+        },
+        zIndex: 10
+      });
+
+      // 初始化腾讯散点图（红点兜底，确保可见）
+      this.dots = new qq.maps.visualization.Dots({
+        map: this.map,
+        style: {
+          fillColor: "rgba(220, 0, 0, 0.85)",
+          strokeWidth: 0,
+          radius: 6
+        },
+        zIndex: 20
       });
 
       this.query();
@@ -225,7 +238,7 @@ export default {
     },
     
     setHeatmapData() {
-      if (!this.heatmap) return;
+      if (!this.heatmap && !this.dots) return;
       const dataPoints = this.heatmapData.map(item => ({
         lat: Number(item.latitude),
         lng: Number(item.longitude),
@@ -233,7 +246,21 @@ export default {
       })).filter(p => !Number.isNaN(p.lat) && !Number.isNaN(p.lng));
 
       const max = dataPoints.reduce((m, p) => Math.max(m, p.value), 0) || 1;
-      this.heatmap.setData({ min: 0, max, data: dataPoints });
+      if (this.heatmap) {
+        this.heatmap.setData({ min: 0, max, data: dataPoints });
+        if (typeof this.heatmap.show === 'function') {
+          this.heatmap.show();
+        }
+      }
+
+      // 散点层：每个聚合点渲染一个红点
+      if (this.dots) {
+        const dotData = dataPoints.map(p => ({ lat: p.lat, lng: p.lng }));
+        this.dots.setData(dotData);
+        if (typeof this.dots.show === 'function') {
+          this.dots.show();
+        }
+      }
     },
     
     toggleSeason(val) {
