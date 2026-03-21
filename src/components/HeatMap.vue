@@ -91,6 +91,7 @@ export default {
     return {
       map: null,
       heatmap: null,
+      dots: null,
       heatmapData: [],
       years: [],
       selectedYears: [],
@@ -121,19 +122,22 @@ export default {
   },
   methods: {
     initMap() {
-      // 初始化百度地图
-      this.map = new BMap.Map("hotMap");
-      const point = new BMap.Point(121.4737, 31.2304);
-      this.map.centerAndZoom(point, 11);
-      this.map.enableScrollWheelZoom(true);
-      
+      // 初始化腾讯地图
+      const center = new qq.maps.LatLng(31.2304, 121.4737);
+      this.map = new qq.maps.Map(document.getElementById('hotMap'), {
+        center,
+        zoom: 11,
+        scrollwheel: true
+      });
+
       // 添加点击事件监听
-      this.map.addEventListener('click', (e) => {
+      qq.maps.event.addListener(this.map, 'click', (e) => {
         this.handleMapClick(e);
       });
-      
-      // 初始化百度热力图
-      const heatmapOverlay = new BMapLib.HeatmapOverlay({
+
+      // 初始化腾讯热力图（可视化库）
+      this.heatmap = new qq.maps.visualization.Heat({
+        map: this.map,
         radius: 25,
         opacity: [0, 0.8],
         gradient: {
@@ -142,18 +146,31 @@ export default {
           0.7: "yellow",
           0.9: "red",
         },
+        zIndex: 10
       });
-      this.map.addOverlay(heatmapOverlay);
-      this.heatmap = heatmapOverlay;
+
+      // 初始化腾讯散点图（红点兜底，确保可见）
+      this.dots = new qq.maps.visualization.Dots({
+        map: this.map,
+        style: {
+          fillColor: "rgba(220, 0, 0, 0.85)",
+          strokeWidth: 0,
+          radius: 6
+        },
+        zIndex: 20
+      });
+
       this.query();
     },
     
     // 处理地图点击事件
     handleMapClick(e) {
-      const point = e.point;
+      const latLng = e && e.latLng;
+      if (!latLng) return;
+
       this.clickedPoint = {
-        lng: point.lng,
-        lat: point.lat
+        lng: latLng.getLng(),
+        lat: latLng.getLat()
       };
       
       // 请求该点的患者数据
@@ -221,13 +238,29 @@ export default {
     },
     
     setHeatmapData() {
-      if (!this.heatmap) return;
+      if (!this.heatmap && !this.dots) return;
       const dataPoints = this.heatmapData.map(item => ({
-        lng: item.longitude,
-        lat: item.latitude,
-        count: item.count
-      }));
-      this.heatmap.setDataSet({ data: dataPoints, max: 3 });
+        lat: Number(item.latitude),
+        lng: Number(item.longitude),
+        value: Number(item.count) || 0
+      })).filter(p => !Number.isNaN(p.lat) && !Number.isNaN(p.lng));
+
+      const max = dataPoints.reduce((m, p) => Math.max(m, p.value), 0) || 1;
+      if (this.heatmap) {
+        this.heatmap.setData({ min: 0, max, data: dataPoints });
+        if (typeof this.heatmap.show === 'function') {
+          this.heatmap.show();
+        }
+      }
+
+      // 散点层：每个聚合点渲染一个红点
+      if (this.dots) {
+        const dotData = dataPoints.map(p => ({ lat: p.lat, lng: p.lng }));
+        this.dots.setData(dotData);
+        if (typeof this.dots.show === 'function') {
+          this.dots.show();
+        }
+      }
     },
     
     toggleSeason(val) {

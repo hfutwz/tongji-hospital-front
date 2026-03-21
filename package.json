@@ -44,8 +44,7 @@
       "parser": "@babel/eslint-parser"
     },
     "globals": {
-      "BMap": "readonly",
-      "BMapLib": "readonly"
+      "qq": "readonly"
     },
     "rules": {}
   },
