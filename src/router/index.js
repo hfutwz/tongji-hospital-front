@@ -2,6 +2,7 @@
 import Vue from 'vue'
 import Router from 'vue-router'
 import MapPage from '../views/MapPage.vue'
+import PredictionPage from '../views/PredictionPage.vue'
 import HourlyStatistics from '../views/HourlyStatistics.vue'
 import DataVisualizationDashboard from '../views/DataVisualizationDashboard.vue'
 import PatientListPage from '../views/PatientListPage.vue'
@@ -67,6 +68,12 @@ const router = new Router({
     name: 'DataImportPage',
       component: DataImportPage,
       meta: { requiresAuth: true }
+  },
+  {
+    path: '/prediction',
+    name: 'PredictionPage',
+    component: PredictionPage,
+    meta: { requiresAuth: true }
   }
 ]
 })
