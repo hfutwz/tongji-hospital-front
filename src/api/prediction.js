@@ -76,18 +76,3 @@ export function triggerModelUpdate() {
 export function getModelHistory() {
   return axios.get('/api/prediction/model/history').then(r => r.data.data)
 }
-
-/**
- * 获取模型版本详细信息（基础版/增量版，样本数等）
- */
-export function getModelVersion() {
-  return axios.get('/api/prediction/model/version').then(r => r.data.data)
-}
-
-/**
- * 同步预测模型（手动触发增量训练）
- * 供患者列表页的"同步预测模型"按钮调用
- */
-export function syncModel(params = {}) {
-  return axios.post('/api/prediction/model/sync', params).then(r => r.data.data)
-}
