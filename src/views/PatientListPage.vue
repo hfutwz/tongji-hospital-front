@@ -2344,6 +2344,8 @@ export default {
   mounted() {
     // 获取患者数据
     this.fetchPatients();
+    // 获取模型版本信息（用于同步预测模型按钮旁的版本标签）
+    this.fetchModelVersion();
   },
   beforeDestroy() {
     // 清理定时器

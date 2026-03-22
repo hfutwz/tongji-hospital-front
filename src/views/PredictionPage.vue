@@ -121,28 +121,48 @@
     </div>
 
     <!-- 模型状态对话框 -->
-    <el-dialog title="预测模型状态" :visible.sync="showModelDialog" width="480px">
+    <el-dialog title="预测模型状态" :visible.sync="showModelDialog" width="520px">
       <div v-if="modelStatus">
+        <!-- 版本模式标签 -->
+        <div style="margin-bottom:12px">
+          <el-tag :type="modelStatus.mode === 'incremental' ? 'success' : 'warning'" size="medium">
+            {{ modelStatus.mode === 'incremental' ? '🟢 增量版本' : modelStatus.mode === 'base' ? '🟡 基础版本' : '⚠️ 未初始化' }}
+          </el-tag>
+        </div>
+
         <el-descriptions :column="2" border size="small">
-          <el-descriptions-item label="版本">{{ modelStatus.version || '未训练' }}</el-descriptions-item>
+          <el-descriptions-item label="当前版本">
+            {{ modelStatus.version_detail && modelStatus.version_detail.current_version || modelStatus.version || '未训练' }}
+          </el-descriptions-item>
           <el-descriptions-item label="训练样本">{{ modelStatus.trained_count }} 条</el-descriptions-item>
+          <el-descriptions-item label="Excel基础">{{ modelStatus.base_samples || 0 }} 条</el-descriptions-item>
+          <el-descriptions-item label="数据库增量">{{ modelStatus.incremental_samples || 0 }} 条</el-descriptions-item>
           <el-descriptions-item label="地区数据">{{ modelStatus.district_count }} 条</el-descriptions-item>
-          <el-descriptions-item label="训练时间">{{ modelStatus.created_at | formatDate }}</el-descriptions-item>
+          <el-descriptions-item label="训练时间">
+            {{ (modelStatus.version_detail && modelStatus.version_detail.last_training) || modelStatus.created_at | formatDate }}
+          </el-descriptions-item>
           <el-descriptions-item label="Top-1准确率" :span="2">
             {{ modelStatus.metrics && modelStatus.metrics.top1_accuracy
                ? (modelStatus.metrics.top1_accuracy * 100).toFixed(1) + '%'
                : '—' }}
           </el-descriptions-item>
         </el-descriptions>
-        <div style="margin-top:16px;display:flex;gap:8px">
-          <el-button size="small" type="primary" @click="handleTriggerUpdate" :loading="updating">
-            触发增量更新
+
+        <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
+          <el-button size="small" type="warning" @click="handleSyncModel" :loading="updating">
+            🔄 同步预测模型
           </el-button>
-          <el-button size="small" @click="loadModelStatus">刷新状态</el-button>
+          <el-button size="small" @click="loadModelStatus" :loading="statusLoading">
+            刷新状态
+          </el-button>
         </div>
-        <p v-if="updateResult" :class="['update-result', updateResult.status === 'success' ? 'success' : 'info']">
+
+        <!-- 同步结果 -->
+        <div v-if="updateResult" style="margin-top:12px;padding:10px;border-radius:6px;font-size:13px"
+             :style="{ background: updateResult.status === 'incremental_trained' ? '#f0f9eb' : '#f4f4f5',
+                       color: updateResult.status === 'incremental_trained' ? '#67c23a' : '#909399' }">
           {{ updateResultText }}
-        </p>
+        </div>
       </div>
       <div v-else style="text-align:center;padding:20px;color:#909399">
         <i class="el-icon-loading"></i> 加载中...
@@ -159,7 +179,7 @@ import {
   getCauseByPeriod,
   getTimeDistribution,
   getModelStatus,
-  triggerModelUpdate
+  syncModel,
 } from '@/api/prediction'
 
 const TIME_PERIODS = ['夜间 00-07', '早高峰 08-09', '午高峰 10-11', '下午 12-16', '晚高峰 17-19', '晚上 20-23']
@@ -189,6 +209,7 @@ export default {
       modelStatus: null,
       showModelDialog: false,
       updating: false,
+      statusLoading: false,
       updateResult: null,
       // 常量
       TIME_PERIODS, SEASONS, DISTRICTS, CAUSE_NAMES,
@@ -215,8 +236,14 @@ export default {
     updateResultText() {
       if (!this.updateResult) return ''
       const r = this.updateResult
-      if (r.status === 'success') return `✅ 更新成功，新增 ${r.delta} 条，版本 ${r.version}`
-      if (r.status === 'skipped') return `ℹ️ 已跳过：${r.reason}`
+      if (r.status === 'incremental_trained')
+        return `✅ 同步成功：Excel基础${r.base_samples}条 + 数据库${r.incremental_samples}条 = 共${r.total_samples}条，版本 ${r.incremental_version}`
+      if (r.status === 'no_new_data')
+        return `ℹ️ 数据库无新增数据（当前${r.current_db_count || 0}条），模型版本未变更`
+      if (r.status === 'trained')
+        return `✅ 基础模型训练完成，使用 ${r.base_samples} 条 Excel 数据`
+      if (r.status === 'skipped') return `ℹ️ 已跳过：${r.reason || r.message}`
+      if (r.status === 'error') return `❌ 失败：${r.message}`
       return JSON.stringify(r)
     }
   },
@@ -279,24 +306,36 @@ export default {
     },
 
     async loadModelStatus() {
+      this.statusLoading = true
       try {
         this.modelStatus = await getModelStatus()
       } catch (e) {
-        this.modelStatus = { version: null, trained_count: 0, district_count: 0, created_at: null, metrics: {} }
+        this.modelStatus = {
+          version: null, trained_count: 0, district_count: 0,
+          created_at: null, metrics: {}, mode: 'unknown',
+          base_samples: 0, incremental_samples: 0, version_detail: null
+        }
+      } finally {
+        this.statusLoading = false
       }
     },
 
-    async handleTriggerUpdate() {
+    async handleSyncModel() {
       this.updating = true
       this.updateResult = null
       try {
-        this.updateResult = await triggerModelUpdate()
-        if (this.updateResult?.status === 'success') {
-          this.$message.success('模型更新成功')
+        this.updateResult = await syncModel({})
+        const s = this.updateResult?.status
+        if (s === 'incremental_trained' || s === 'trained') {
+          this.$message.success('模型同步成功')
           await this.loadModelStatus()
+        } else if (s === 'no_new_data') {
+          this.$message.info('数据库无新增数据，模型版本未变更')
+        } else if (s === 'error') {
+          this.$message.error('同步失败：' + (this.updateResult?.message || '未知错误'))
         }
       } catch (e) {
-        this.$message.error('模型更新失败')
+        this.$message.error('模型同步失败，请确认 Python 服务已启动')
       } finally {
         this.updating = false
       }
