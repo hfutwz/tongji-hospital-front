@@ -43,6 +43,18 @@
           >
             批量删除 ({{ selectedPatients.length }})
           </button>
+          
+          <!-- 新增：同步预测模型按钮 -->
+          <button 
+            @click="handleSyncModel" 
+            class="sync-model-btn" 
+            :disabled="isSyncing"
+            :class="{ 'syncing': isSyncing }"
+          >
+            <i v-if="isSyncing" class="sync-icon">🔄</i>
+            <i v-else class="sync-icon">🔄</i>
+            {{ isSyncing ? '同步中...' : '同步预测模型' }}
+          </button>
         </div>
       </div>
     </div>
@@ -906,6 +918,7 @@ import RtsScoreModal from '@/components/RtsScoreModal.vue'
 import PatientOnAdmissionModal from '@/components/PatientOnAdmissionModal.vue'
 import PatientOffAdmissionModal from '@/components/PatientOffAdmissionModal.vue'
 import ImportLoadingModal from '@/components/ImportLoadingModal.vue'
+import { syncModel, getModelVersion } from '@/api/prediction'
 
 export default {
   components: {
@@ -965,6 +978,12 @@ export default {
       selectedFile: null,
       isDragOver: false,
       isImporting: false,
+      
+      // 同步预测模型相关状态
+      isSyncing: false,
+      showSyncResultDialog: false,
+      syncResult: null,
+      modelVersion: null,
       importResult: null,
       
       // 导入加载状态
@@ -2113,6 +2132,58 @@ export default {
       }
     },
 
+    // 同步预测模型相关方法
+    async handleSyncModel() {
+      if (this.isSyncing) return;
+      
+      this.isSyncing = true;
+      this.$message.info('正在同步预测模型，请稍候...');
+      
+      try {
+        const result = await syncModel({});
+        
+        if (result.status === 'incremental_trained') {
+          this.syncResult = result;
+          this.$message.success(`模型同步成功！基础${result.base_samples}条 + 增量${result.incremental_samples}条`);
+          
+          // 显示详细的同步结果
+          this.$notify({
+            title: '模型同步成功',
+            message: `版本: ${result.incremental_version}\n基础样本: ${result.base_samples}条\n增量样本: ${result.incremental_samples}条\n总计: ${result.total_samples}条`,
+            type: 'success',
+            duration: 5000
+          });
+        } else if (result.status === 'no_new_data') {
+          this.$message.info('数据库中无新增数据，模型版本未变更');
+        } else if (result.status === 'trained') {
+          this.$message.success(`基础模型训练完成，使用 ${result.base_samples} 条数据`);
+        } else if (result.status === 'skipped') {
+          this.$message.info(result.message || '模型同步已跳过');
+        } else {
+          this.$message.warning(`同步结果: ${result.status || '未知'}`);
+        }
+        
+        // 刷新版本信息
+        await this.fetchModelVersion();
+        
+      } catch (error) {
+        console.error('同步预测模型失败:', error);
+        this.$message.error('同步失败: ' + (error.message || '请检查预测服务是否启动'));
+      } finally {
+        this.isSyncing = false;
+      }
+    },
+
+    // 获取模型版本信息
+    async fetchModelVersion() {
+      try {
+        const result = await getModelVersion();
+        this.modelVersion = result;
+      } catch (error) {
+        console.error('获取模型版本失败:', error);
+      }
+    },
+
     // 删除患者相关方法
     handleDelete(patient) {
       this.patientToDelete = patient;
@@ -2455,6 +2526,59 @@ export default {
   background-color: #adb5bd;
   cursor: not-allowed;
   opacity: 0.6;
+}
+
+/* 同步预测模型按钮样式 */
+.sync-model-btn {
+  background: linear-gradient(135deg, #FF9F43 0%, #FF6B35 100%);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  margin-left: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);
+}
+
+.sync-model-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #FF8A2C 0%, #E55A28 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.4);
+}
+
+.sync-model-btn:disabled {
+  background: linear-gradient(135deg, #ccc 0%, #999 100%);
+  cursor: not-allowed;
+  opacity: 0.7;
+  box-shadow: none;
+}
+
+.sync-model-btn.syncing {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.sync-icon {
+  font-size: 14px;
+  display: inline-block;
+}
+
+.sync-model-btn.syncing .sync-icon {
+  animation: rotate 1s linear infinite;
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
 }
 
 /* 表格样式 */
