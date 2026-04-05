@@ -347,7 +347,7 @@ button {
   border-radius: 4px;
   cursor: pointer;
   font-size: 14px;
-}
+} 
 button:hover {
   background-color: #025b9c;
 }

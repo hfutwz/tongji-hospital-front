@@ -9,6 +9,7 @@ import KeyEventsDistributionPage from '../views/KeyEventsDistributionPage.vue'
 import MapDataAnimation from '../components/MapDataAnimation.vue'
 import DataImportPage from '../views/DataImportPage.vue'
 import LoginPage from '../views/LoginPage.vue'
+import PredictionModulePage from '../views/PredictionModulePage.vue'
 
 Vue.use(Router)
 
@@ -67,6 +68,12 @@ const router = new Router({
     name: 'DataImportPage',
       component: DataImportPage,
       meta: { requiresAuth: true }
+  },
+  {
+    path: '/prediction',
+    name: 'PredictionModulePage',
+    component: PredictionModulePage,
+    meta: { requiresAuth: true }
   }
 ]
 })

@@ -27,6 +27,10 @@
             <i class="el-icon-time"></i>
             <span>患者数量统计</span>
           </router-link>
+          <router-link to="/prediction" class="nav-item" :class="{ active: $route.path === '/prediction' }">
+            <i class="el-icon-data-analysis"></i>
+            <span>伤因预测</span>
+          </router-link>
           <!-- <router-link to="/key-events-distribution" class="nav-item" :class="{ active: $route.path === '/key-events-distribution' }">
             <i class="el-icon-data-analysis"></i>
             <span>关键事件分布</span>
