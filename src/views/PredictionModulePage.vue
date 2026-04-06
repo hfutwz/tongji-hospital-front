@@ -23,10 +23,10 @@
 
     <!-- 预测卡片网格 -->
     <div class="prediction-grid">
-      <!-- T1: 条件 → 伤因概率 -->
+      <!-- T1: 伤因分布预测 -->
       <prediction-card
         icon="📊"
-        title="条件 → 伤因概率"
+        title="伤因分布预测"
         subtitle="根据时段、季节、地区预测伤因概率分布"
         :loading="loading.t1"
         @predict="fetchType1"
@@ -59,10 +59,10 @@
         />
       </prediction-card>
 
-      <!-- T2: 伤因 → 时空分布 -->
+      <!-- T2: 时空分布预测 -->
       <prediction-card
         icon="🌐"
-        title="伤因 → 时空分布"
+        title="时空分布预测"
         subtitle="查看伤因在时段、季节及地区的分布情况"
         :loading="loading.t2"
         @predict="fetchType2"
@@ -82,10 +82,10 @@
         />
       </prediction-card>
 
-      <!-- T3: 地区 → 时序与伤因 -->
+      <!-- T3: 某地区创伤预测 -->
       <prediction-card
         icon="🏙️"
-        title="地区 → 时序与伤因"
+        title="某地区创伤预测"
         subtitle="查看地区在不同时段、季节及伤因上的分布"
         :loading="loading.t3"
         @predict="fetchType3"
@@ -106,10 +106,10 @@
         />
       </prediction-card>
 
-      <!-- T4: 时段+伤因 → 地区 -->
+      <!-- T4: 地区分布预测 -->
       <prediction-card
         icon="🗺️"
-        title="时段+伤因 → 地区"
+        title="地区分布预测"
         subtitle="查看特定时段和伤因在各地区的分布"
         :loading="loading.t4"
         @predict="fetchType4"
