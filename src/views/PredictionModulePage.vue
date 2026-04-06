@@ -1,127 +1,150 @@
 <template>
   <div class="prediction-page">
-    <div class="page-hero page-hero--compact">
-      <div class="hero-text">
-        <h1>创伤伤因预测分析</h1>
+    <!-- Hero 区域 -->
+    <div class="page-hero">
+      <div class="hero-content">
+        <h1 class="hero-title">
+          <span class="title-icon">🔮</span>
+          创伤伤因预测分析
+        </h1>
+        <p class="hero-subtitle">基于历史数据的时空因导智能预测</p>
+      </div>
+      <div class="hero-stats" v-if="modelStatus">
+        <div class="stat-item">
+          <div class="stat-value">{{ modelStatus.sample_count || '-' }}</div>
+          <div class="stat-label">训练样本</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value">{{ modelStatus.version || '-' }}</div>
+          <div class="stat-label">模型版本</div>
+        </div>
       </div>
     </div>
 
-    <el-card class="section-card tabs-card tabs-card--main" shadow="hover">
-      <div slot="header" class="card-header card-header--main">
-        <div>
-          <span class="card-header-title"><i class="el-icon-data-line"></i> 预测结果</span>
-          <p class="card-header-sub">
-            四类预测：伤因概率、伤因时空分布、地区画像、时段+伤因空间分布。枚举与接口规划见
-            <code>docs/prediction-module-plan.md</code>。
-          </p>
+    <!-- 预测卡片网格 -->
+    <div class="prediction-grid">
+      <!-- T1: 条件 → 伤因概率 -->
+      <prediction-card
+        icon="📊"
+        title="条件 → 伤因概率"
+        subtitle="根据时段、季节、地区预测伤因概率分布"
+        :loading="loading.t1"
+        @predict="fetchType1"
+      >
+        <div class="selector-group">
+          <interactive-selector
+            v-model="forms.t1.timePeriod"
+            :options="timePeriodOptions"
+            label="时段"
+            icon="⏰"
+          />
+          <interactive-selector
+            v-model="forms.t1.season"
+            :options="seasonOptions"
+            label="季节"
+            icon="🌿"
+          />
+          <interactive-selector
+            v-model="forms.t1.district"
+            :options="districtOptions"
+            label="地区"
+            icon="📍"
+            filterable
+          />
         </div>
-      </div>
-      <el-tabs v-model="activeTab" type="border-card">
-        <!-- 1. 条件 → 伤因概率分布 -->
-        <el-tab-pane label="条件 → 伤因概率" name="t1">
-          <p class="tab-desc">根据时段、季节、地区（均可选「全部」）预测伤因概率分布。</p>
-          <div class="tab-form">
-            <el-form :inline="true" size="small" @submit.native.prevent>
-              <el-form-item label="时段">
-                <el-select v-model="forms.t1.timePeriod" placeholder="时段" style="width: 200px">
-                  <el-option v-for="o in timePeriodOptions" :key="'tp-' + o.v" :label="o.l" :value="o.v" />
-                </el-select>
-              </el-form-item>
-              <el-form-item label="季节">
-                <el-select v-model="forms.t1.season" placeholder="季节" style="width: 200px">
-                  <el-option v-for="o in seasonOptions" :key="'s-' + o.v" :label="o.l" :value="o.v" />
-                </el-select>
-              </el-form-item>
-              <el-form-item label="地区">
-                <el-select v-model="forms.t1.district" placeholder="地区" filterable style="width: 200px">
-                  <el-option v-for="o in districtOptions" :key="'d-' + o.v" :label="o.l" :value="o.v" />
-                </el-select>
-              </el-form-item>
-              <el-form-item>
-                <el-button type="primary" :loading="loading.t1" @click="fetchType1">预测</el-button>
-              </el-form-item>
-            </el-form>
-            <prediction-result-block :value="payloads.t1" />
-          </div>
-        </el-tab-pane>
+        <prediction-result-enhanced
+          :value="payloads.t1"
+          type="cause"
+          slot="result"
+        />
+      </prediction-card>
 
-        <!-- 2. 伤因 → 时段 / 季节 / 地区分布 -->
-        <el-tab-pane label="伤因 → 时空分布" name="t2">
-          <p class="tab-desc">选择伤因（可选「全部」），查看该伤因在时段、季节及各区县的分布预测。</p>
-          <div class="tab-form">
-            <el-form :inline="true" size="small" @submit.native.prevent>
-              <el-form-item label="伤因">
-                <el-select v-model="forms.t2.injuryCause" placeholder="伤因" style="width: 200px">
-                  <el-option v-for="o in injuryCauseOptions" :key="'ic-' + o.v" :label="o.l" :value="o.v" />
-                </el-select>
-              </el-form-item>
-              <el-form-item>
-                <el-button type="primary" :loading="loading.t2" @click="fetchType2">预测</el-button>
-              </el-form-item>
-            </el-form>
-            <prediction-triple-distribution-block :payload="payloads.t2" />
-          </div>
-        </el-tab-pane>
+      <!-- T2: 伤因 → 时空分布 -->
+      <prediction-card
+        icon="🌐"
+        title="伤因 → 时空分布"
+        subtitle="查看伤因在时段、季节及地区的分布情况"
+        :loading="loading.t2"
+        @predict="fetchType2"
+      >
+        <div class="selector-group single">
+          <interactive-selector
+            v-model="forms.t2.injuryCause"
+            :options="injuryCauseOptions"
+            label="伤因"
+            icon="🩹"
+            size="large"
+          />
+        </div>
+        <prediction-triple-enhanced
+          :payload="payloads.t2"
+          slot="result"
+        />
+      </prediction-card>
 
-        <!-- 3. 地区 → 时段 / 季节 / 伤因分布 -->
-        <el-tab-pane label="地区 → 时序与伤因" name="t3">
-          <p class="tab-desc">选择地区（可选「全部」），查看该地区在时段、季节及伤因上的历史占比（季节在无联合表时为统计近似）。</p>
-          <div class="tab-form">
-            <el-form :inline="true" size="small" @submit.native.prevent>
-              <el-form-item label="地区">
-                <el-select v-model="forms.t3.district" placeholder="地区" filterable style="width: 220px">
-                  <el-option
-                    v-for="o in districtOptions"
-                    :key="'t3d-' + o.v"
-                    :label="o.l"
-                    :value="o.v"
-                  />
-                </el-select>
-              </el-form-item>
-              <el-form-item>
-                <el-button type="primary" :loading="loading.t3" @click="fetchType3">预测</el-button>
-              </el-form-item>
-            </el-form>
-            <prediction-district-profile-block :profile="payloads.t3" />
-          </div>
-        </el-tab-pane>
+      <!-- T3: 地区 → 时序与伤因 -->
+      <prediction-card
+        icon="🏙️"
+        title="地区 → 时序与伤因"
+        subtitle="查看地区在不同时段、季节及伤因上的分布"
+        :loading="loading.t3"
+        @predict="fetchType3"
+      >
+        <div class="selector-group single">
+          <interactive-selector
+            v-model="forms.t3.district"
+            :options="districtOptions"
+            label="地区"
+            icon="📍"
+            size="large"
+            filterable
+          />
+        </div>
+        <prediction-profile-enhanced
+          :profile="payloads.t3"
+          slot="result"
+        />
+      </prediction-card>
 
-        <!-- 4. 时段 + 伤因 → 地区分布 -->
-        <el-tab-pane label="时段+伤因 → 地区" name="t4">
-          <p class="tab-desc">在给定时段与伤因下（均可选「全部」），查看各区县的原始发生人次分布。</p>
-          <div class="tab-form">
-            <el-form :inline="true" size="small" @submit.native.prevent>
-              <el-form-item label="时段">
-                <el-select v-model="forms.t4.timePeriod" placeholder="时段" style="width: 200px">
-                  <el-option
-                    v-for="o in timePeriodOptions"
-                    :key="'t4tp-' + o.v"
-                    :label="o.l"
-                    :value="o.v"
-                  />
-                </el-select>
-              </el-form-item>
-              <el-form-item label="伤因">
-                <el-select v-model="forms.t4.injuryCause" placeholder="伤因" style="width: 200px">
-                  <el-option v-for="o in injuryCauseOptions" :key="'t4ic-' + o.v" :label="o.l" :value="o.v" />
-                </el-select>
-              </el-form-item>
-              <el-form-item>
-                <el-button type="primary" :loading="loading.t4" @click="fetchType4">预测</el-button>
-              </el-form-item>
-            </el-form>
-            <prediction-result-block :value="payloads.t4" />
-          </div>
-        </el-tab-pane>
-      </el-tabs>
-    </el-card>
+      <!-- T4: 时段+伤因 → 地区 -->
+      <prediction-card
+        icon="🗺️"
+        title="时段+伤因 → 地区"
+        subtitle="查看特定时段和伤因在各地区的分布"
+        :loading="loading.t4"
+        @predict="fetchType4"
+      >
+        <div class="selector-group dual">
+          <interactive-selector
+            v-model="forms.t4.timePeriod"
+            :options="timePeriodOptions"
+            label="时段"
+            icon="⏰"
+          />
+          <interactive-selector
+            v-model="forms.t4.injuryCause"
+            :options="injuryCauseOptions"
+            label="伤因"
+            icon="🩹"
+          />
+        </div>
+        <prediction-district-map
+          :value="payloads.t4"
+          slot="result"
+        />
+      </prediction-card>
+    </div>
   </div>
 </template>
 
 <script>
-import PredictionResultBlock from '@/components/PredictionResultBlock.vue'
-import PredictionTripleDistributionBlock from '@/components/PredictionTripleDistributionBlock.vue'
-import PredictionDistrictProfileBlock from '@/components/PredictionDistrictProfileBlock.vue'
+import PredictionCard from '@/components/PredictionCard.vue'
+import InteractiveSelector from '@/components/InteractiveSelector.vue'
+import PredictionResultEnhanced from '@/components/PredictionResultEnhanced.vue'
+import PredictionTripleEnhanced from '@/components/PredictionTripleEnhanced.vue'
+import PredictionProfileEnhanced from '@/components/PredictionProfileEnhanced.vue'
+import PredictionDistrictMap from '@/components/PredictionDistrictMap.vue'
+
 import {
   PREDICTION_ALL,
   DISTRICT_OPTIONS,
@@ -142,13 +165,15 @@ const unwrap = (res) => {
 export default {
   name: 'PredictionModulePage',
   components: {
-    PredictionResultBlock,
-    PredictionTripleDistributionBlock,
-    PredictionDistrictProfileBlock
+    PredictionCard,
+    InteractiveSelector,
+    PredictionResultEnhanced,
+    PredictionTripleEnhanced,
+    PredictionProfileEnhanced,
+    PredictionDistrictMap
   },
   data() {
     return {
-      activeTab: 't1',
       districtOptions: DISTRICT_OPTIONS,
       seasonOptions: SEASON_OPTIONS,
       timePeriodOptions: TIME_PERIOD_OPTIONS,
@@ -174,13 +199,27 @@ export default {
         t2: null,
         t3: null,
         t4: null
-      }
+      },
+      modelStatus: null
     }
   },
-  computed: {},
+  mounted() {
+    this.fetchModelStatus()
+  },
   methods: {
     toastError(msg) {
       this.$message.error(msg || '请求失败')
+    },
+    async fetchModelStatus() {
+      try {
+        const res = await this.$axios.get('/api/prediction/model/status')
+        const data = unwrap(res)
+        if (data && !data.error) {
+          this.modelStatus = data
+        }
+      } catch (e) {
+        console.warn('获取模型状态失败', e)
+      }
     },
     async fetchType1() {
       this.loading.t1 = true
@@ -188,10 +227,9 @@ export default {
         const body = {
           time_period: this.forms.t1.timePeriod === PREDICTION_ALL ? null : this.forms.t1.timePeriod,
           season: this.forms.t1.season === PREDICTION_ALL ? null : this.forms.t1.season,
-          district:
-            this.forms.t1.district === PREDICTION_ALL
-              ? null
-              : String(this.forms.t1.district || '').trim() || null
+          district: this.forms.t1.district === PREDICTION_ALL
+            ? null
+            : String(this.forms.t1.district || '').trim() || null
         }
         const res = await this.$axios.post('/api/prediction/comprehensive', body)
         const data = unwrap(res)
@@ -210,7 +248,6 @@ export default {
     },
     async fetchType2() {
       const c = this.forms.t2.injuryCause
-      // 全选时 injury_cause 传 null
       const causeParam = (c === PREDICTION_ALL || c === '' || c == null) ? null : c
       this.loading.t2 = true
       try {
@@ -243,7 +280,6 @@ export default {
     },
     async fetchType3() {
       const raw = this.forms.t3.district
-      // 全选时 district 传 null
       const districtParam = (raw === PREDICTION_ALL || raw === '' || raw == null) ? null : String(raw).trim()
       this.loading.t3 = true
       try {
@@ -266,7 +302,6 @@ export default {
     async fetchType4() {
       const tp = this.forms.t4.timePeriod
       const ic = this.forms.t4.injuryCause
-      // 全选时传 null
       const timePeriodParam = (tp === PREDICTION_ALL || tp == null) ? null : tp
       const injuryCauseParam = (ic === PREDICTION_ALL || ic === '' || ic == null) ? null : ic
       this.loading.t4 = true
@@ -295,114 +330,132 @@ export default {
 
 <style scoped>
 .prediction-page {
-  padding: 20px;
-  background: #f5f7fa;
+  padding: 24px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
   min-height: 100vh;
   box-sizing: border-box;
 }
 
+/* Hero 区域 */
 .page-hero {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  gap: 16px;
-  margin-bottom: 16px;
-  padding: 20px 24px;
-  background: linear-gradient(135deg, #1e3a5f 0%, #409eff 100%);
-  border-radius: 12px;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 24px 32px;
+  background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 50%, #409eff 100%);
+  border-radius: 16px;
   color: #fff;
-  box-shadow: 0 8px 24px rgba(64, 158, 255, 0.35);
+  box-shadow: 0 12px 40px rgba(30, 58, 95, 0.25);
 }
 
-.page-hero--compact {
-  padding: 16px 22px;
+.hero-content {
+  flex: 1;
 }
 
-.page-hero h1 {
-  margin: 0;
-  font-size: 22px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-}
-
-.section-card {
-  margin-bottom: 20px;
-  border-radius: 10px;
-  border: none;
-}
-
-.section-card >>> .el-card__header {
-  padding: 14px 18px;
-  border-bottom: 1px solid #ebeef5;
-}
-
-.card-header {
-  font-weight: 600;
-  font-size: 15px;
-  color: #303133;
+.hero-title {
+  margin: 0 0 8px 0;
+  font-size: 28px;
+  font-weight: 700;
   display: flex;
   align-items: center;
+  gap: 12px;
 }
 
-.card-header i {
-  margin-right: 8px;
-  color: #409eff;
+.title-icon {
+  font-size: 32px;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
 }
 
-.card-header--main {
-  align-items: flex-start;
-  width: 100%;
+.hero-subtitle {
+  margin: 0;
+  font-size: 14px;
+  opacity: 0.85;
+  font-weight: 400;
 }
 
-.card-header-title {
-  font-size: 17px;
-  font-weight: 600;
-  color: #303133;
+.hero-stats {
+  display: flex;
+  gap: 24px;
 }
 
-.card-header-sub {
-  margin: 6px 0 0;
-  font-size: 13px;
-  font-weight: normal;
-  color: #909399;
-  line-height: 1.5;
+.stat-item {
+  text-align: center;
+  padding: 12px 20px;
+  background: rgba(255,255,255,0.12);
+  border-radius: 12px;
+  backdrop-filter: blur(8px);
 }
 
-.card-header-sub code {
+.stat-value {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.stat-label {
   font-size: 12px;
-  padding: 1px 6px;
-  background: #f4f4f5;
-  border-radius: 4px;
-  color: #606266;
+  opacity: 0.8;
 }
 
-.tabs-card--main {
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+/* 预测网格 */
+.prediction-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
 }
 
-.tabs-card--main >>> .el-card__body {
-  padding: 16px 18px 20px;
+@media (max-width: 1200px) {
+  .prediction-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
-.tabs-card >>> .el-tabs--border-card {
-  border: none;
-  box-shadow: none;
+/* 选择器组 */
+.selector-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  margin-bottom: 16px;
 }
 
-.tabs-card >>> .el-tabs__header {
-  background: #f0f2f5;
+.selector-group.single {
+  justify-content: center;
 }
 
-.tab-desc {
-  margin: 0 0 10px;
-  font-size: 13px;
-  color: #606266;
-  line-height: 1.5;
+.selector-group.dual {
+  justify-content: center;
+  gap: 24px;
 }
 
-.tab-form {
-  padding: 4px 4px 4px;
-  min-height: 120px;
+/* 响应式 */
+@media (max-width: 768px) {
+  .prediction-page {
+    padding: 16px;
+  }
+  
+  .page-hero {
+    flex-direction: column;
+    text-align: center;
+    gap: 16px;
+  }
+  
+  .hero-title {
+    font-size: 22px;
+    justify-content: center;
+  }
+  
+  .hero-stats {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .selector-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
 }
-
 </style>
