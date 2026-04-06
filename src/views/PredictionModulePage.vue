@@ -229,7 +229,7 @@ const parseError = (e) => {
     } else if (data && data.detail) {
       detail = typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail)
     }
-  } catch (_) {}
+  } catch (_) { /* 忽略解析异常，使用默认提示 */ }
 
   // 根据 detail 匹配已知场景
   if (detail.includes('尚未训练') || detail.includes('model/train') || detail.includes('模型未就绪')) {
