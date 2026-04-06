@@ -8,24 +8,25 @@
       </div>
     </div>
     
-    <div class="card-body">
-      <slot></slot>
-    </div>
-    
-    <div class="card-actions">
-      <button 
-        class="predict-btn"
-        :class="{ 'is-loading': loading }"
-        :disabled="loading"
-        @click="$emit('predict')"
-      >
-        <span class="btn-icon">
-          <i v-if="loading" class="el-icon-loading"></i>
-          <span v-else>🔮</span>
-        </span>
-        <span class="btn-text">{{ loading ? '预测中...' : '开始预测' }}</span>
-        <div class="btn-shine"></div>
-      </button>
+    <div class="card-form">
+      <div class="form-selectors">
+        <slot></slot>
+      </div>
+      <div class="form-action">
+        <button 
+          class="predict-btn"
+          :class="{ 'is-loading': loading }"
+          :disabled="loading"
+          @click="$emit('predict')"
+        >
+          <span class="btn-icon">
+            <i v-if="loading" class="el-icon-loading"></i>
+            <span v-else>🔮</span>
+          </span>
+          <span class="btn-text">{{ loading ? '预测中...' : '预测' }}</span>
+          <div class="btn-shine"></div>
+        </button>
+      </div>
     </div>
     
     <div class="card-result" :class="{ 'has-content': hasResult }">
@@ -137,34 +138,48 @@ export default {
   line-height: 1.5;
 }
 
-/* 主体 */
-.card-body {
+/* 表单区域 - 选择器和按钮在一行 */
+.card-form {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
   padding: 20px 24px;
 }
 
-/* 操作区 */
-.card-actions {
-  padding: 0 24px 20px;
+.form-selectors {
+  flex: 1;
   display: flex;
-  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.form-selectors > * {
+  flex: 1;
+  min-width: 140px;
+}
+
+.form-action {
+  flex-shrink: 0;
+  padding-bottom: 2px;
 }
 
 .predict-btn {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 14px 32px;
+  gap: 8px;
+  padding: 12px 24px;
   background: linear-gradient(135deg, #409eff 0%, #66b1ff 100%);
   border: none;
-  border-radius: 12px;
+  border-radius: 10px;
   color: #fff;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   overflow: hidden;
   transition: all 0.3s;
   box-shadow: 0 4px 16px rgba(64, 158, 255, 0.35);
+  white-space: nowrap;
 }
 
 .predict-btn:hover:not(:disabled) {
@@ -253,21 +268,34 @@ export default {
   .card-header {
     padding: 20px 20px 12px;
   }
-  
+
   .header-icon {
     font-size: 32px;
   }
-  
+
   .header-title {
     font-size: 16px;
   }
-  
-  .card-body,
-  .card-actions {
-    padding-left: 20px;
-    padding-right: 20px;
+
+  .card-form {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 16px 20px;
   }
-  
+
+  .form-selectors {
+    flex-direction: column;
+  }
+
+  .form-selectors > * {
+    min-width: 100%;
+  }
+
+  .form-action {
+    padding-bottom: 0;
+    padding-top: 8px;
+  }
+
   .predict-btn {
     width: 100%;
     justify-content: center;

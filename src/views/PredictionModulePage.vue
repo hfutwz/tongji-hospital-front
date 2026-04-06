@@ -632,24 +632,20 @@ export default {
   }
 }
 
-/* 选择器组 */
+/* 选择器组 - 在卡片内联布局中使用 */
 .selector-group {
   display: flex;
   flex-wrap: wrap;
-  gap: 16px;
-  padding: 16px;
-  background: #f8f9fa;
-  border-radius: 12px;
-  margin-bottom: 16px;
+  gap: 12px;
+  width: 100%;
 }
 
 .selector-group.single {
-  justify-content: center;
+  max-width: 300px;
 }
 
 .selector-group.dual {
-  justify-content: center;
-  gap: 24px;
+  gap: 16px;
 }
 
 /* 响应式 */
@@ -679,9 +675,8 @@ export default {
     justify-content: center;
   }
   
-  .selector-group {
-    flex-direction: column;
-    align-items: stretch;
+  .selector-group.single {
+    max-width: 100%;
   }
 }
 </style>
