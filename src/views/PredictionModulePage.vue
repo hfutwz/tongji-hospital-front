@@ -208,6 +208,48 @@ const unwrap = (res) => {
   return body.data
 }
 
+/**
+ * 将 HTTP 异常解析为对用户友好的提示文字。
+ * 屏蔽原始错误报文（如 503 Service Unavailable: [{"detail":"..."}]），
+ * 根据状态码和 Python detail 内容匹配已知场景，返回中文提示。
+ */
+const parseError = (e) => {
+  const status = e.response && e.response.status
+
+  // 尝试从响应体提取 Python/Java 的 detail 信息
+  let detail = ''
+  try {
+    const data = e.response && e.response.data
+    if (typeof data === 'string') {
+      // Java 把 Python 响应直接当字符串转发时
+      const match = data.match(/"detail"\s*:\s*"([^"]+)"/)
+      if (match) detail = match[1]
+    } else if (data && data.errorMsg) {
+      detail = data.errorMsg
+    } else if (data && data.detail) {
+      detail = typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail)
+    }
+  } catch (_) {}
+
+  // 根据 detail 匹配已知场景
+  if (detail.includes('尚未训练') || detail.includes('model/train') || detail.includes('模型未就绪')) {
+    return '预测模型尚未训练，请先在「模型管理」中点击「全量训练」初始化模型'
+  }
+  if (detail.includes('无统计数据') || detail.includes('no_data')) {
+    return '该条件下暂无历史数据，请调整筛选条件后重试'
+  }
+
+  // 根据状态码给通用提示
+  if (status === 503) return '预测服务暂时不可用，请稍后再试或联系管理员'
+  if (status === 502 || status === 504) return '预测服务响应超时，请稍后重试'
+  if (status === 500) return '预测服务内部错误，请联系管理员'
+  if (status === 404) return '该条件下暂无历史数据，请调整筛选条件后重试'
+  if (status === 422) return '请求参数有误，请检查筛选条件'
+  if (!status) return '网络连接失败，请检查网络或联系管理员'
+
+  return '预测请求失败，请稍后重试'
+}
+
 export default {
   name: 'PredictionModulePage',
   components: {
@@ -329,9 +371,10 @@ export default {
           this.training.type = 'info'
         }
       } catch (e) {
-        this.training.message = `${actionName}失败：${e.message || '网络错误'}`
+        const msg = parseError(e)
+        this.training.message = `${actionName}失败：${msg}`
         this.training.type = 'error'
-        this.toastError(e.message)
+        this.toastError(msg)
       } finally {
         this.training.loading = false
       }
@@ -394,8 +437,9 @@ export default {
         }
         this.payloads.t1 = data
       } catch (e) {
-        this.payloads.t1 = { error: e.message || '网络错误' }
-        this.toastError(e.message)
+        const msg = parseError(e)
+        this.payloads.t1 = { error: msg }
+        this.toastError(msg)
       } finally {
         this.loading.t1 = false
       }
@@ -426,8 +470,9 @@ export default {
           districts: d2 && typeof d2 === 'object' ? d2 : {}
         }
       } catch (e) {
-        this.payloads.t2 = { error: e.message || '网络错误' }
-        this.toastError(e.message)
+        const msg = parseError(e)
+        this.payloads.t2 = { error: msg }
+        this.toastError(msg)
       } finally {
         this.loading.t2 = false
       }
@@ -464,8 +509,9 @@ export default {
           }
           return
         }
-        this.payloads.t3 = { error: e.message || '网络错误' }
-        this.toastError(e.message)
+        const msg = parseError(e)
+        this.payloads.t3 = { error: msg }
+        this.toastError(msg)
       } finally {
         this.loading.t3 = false
       }
@@ -487,8 +533,9 @@ export default {
         }
         this.payloads.t4 = data
       } catch (e) {
-        this.payloads.t4 = { error: e.message || '网络错误' }
-        this.toastError(e.message)
+        const msg = parseError(e)
+        this.payloads.t4 = { error: msg }
+        this.toastError(msg)
       } finally {
         this.loading.t4 = false
       }
