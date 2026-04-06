@@ -371,13 +371,17 @@ export default {
         console.warn('获取模型状态失败', e)
       }
     },
+    // 辅助函数：检查是否为"全部"选项
+    isAllOption(value) {
+      return value === PREDICTION_ALL || value === '__ALL__' || value === '' || value == null
+    },
     async fetchType1() {
       this.loading.t1 = true
       try {
         const body = {
-          time_period: this.forms.t1.timePeriod === PREDICTION_ALL ? null : this.forms.t1.timePeriod,
-          season: this.forms.t1.season === PREDICTION_ALL ? null : this.forms.t1.season,
-          district: this.forms.t1.district === PREDICTION_ALL
+          time_period: this.isAllOption(this.forms.t1.timePeriod) ? null : this.forms.t1.timePeriod,
+          season: this.isAllOption(this.forms.t1.season) ? null : this.forms.t1.season,
+          district: this.isAllOption(this.forms.t1.district)
             ? null
             : String(this.forms.t1.district || '').trim() || null
         }
@@ -398,7 +402,7 @@ export default {
     },
     async fetchType2() {
       const c = this.forms.t2.injuryCause
-      const causeParam = (c === PREDICTION_ALL || c === '' || c == null) ? null : c
+      const causeParam = this.isAllOption(c) ? null : c
       this.loading.t2 = true
       try {
         const params1 = causeParam !== null ? { injury_cause: causeParam } : {}
@@ -429,8 +433,9 @@ export default {
       }
     },
     async fetchType3() {
-      const raw = this.forms.t3.district
-      const districtParam = (raw === PREDICTION_ALL || raw === '' || raw == null) ? null : String(raw).trim()
+      const districtParam = this.isAllOption(this.forms.t3.district)
+        ? null
+        : String(this.forms.t3.district || '').trim() || null
       this.loading.t3 = true
       try {
         const params = districtParam !== null ? { district: districtParam } : {}
@@ -450,10 +455,8 @@ export default {
       }
     },
     async fetchType4() {
-      const tp = this.forms.t4.timePeriod
-      const ic = this.forms.t4.injuryCause
-      const timePeriodParam = (tp === PREDICTION_ALL || tp == null) ? null : tp
-      const injuryCauseParam = (ic === PREDICTION_ALL || ic === '' || ic == null) ? null : ic
+      const timePeriodParam = this.isAllOption(this.forms.t4.timePeriod) ? null : this.forms.t4.timePeriod
+      const injuryCauseParam = this.isAllOption(this.forms.t4.injuryCause) ? null : this.forms.t4.injuryCause
       this.loading.t4 = true
       try {
         const params = {}
