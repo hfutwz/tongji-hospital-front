@@ -441,6 +441,11 @@ export default {
         const params = districtParam !== null ? { district: districtParam } : {}
         const res = await this.$axios.get('/api/prediction/district-profile', { params })
         const data = unwrap(res)
+        // 无数据（该地区暂无历史记录）：给出友好提示，不报错
+        if (data && data.no_data) {
+          this.payloads.t3 = { no_data: true, district: data.district, reason: data.reason }
+          return
+        }
         if (data && data.error) {
           this.payloads.t3 = { error: data.error }
           this.toastError(data.error)
@@ -448,6 +453,17 @@ export default {
         }
         this.payloads.t3 = data
       } catch (e) {
+        // 兼容旧版本服务仍返回404的情况
+        const status = e.response && e.response.status
+        if (status === 404) {
+          const district = districtParam || '所选地区'
+          this.payloads.t3 = {
+            no_data: true,
+            district,
+            reason: `${district}暂无历史创伤数据，无法生成画像`
+          }
+          return
+        }
         this.payloads.t3 = { error: e.message || '网络错误' }
         this.toastError(e.message)
       } finally {
