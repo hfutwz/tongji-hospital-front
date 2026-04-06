@@ -1,13 +1,10 @@
 <template>
   <div class="triple-enhanced">
     <!-- 错误提示 -->
-    <el-alert 
-      v-if="payload && payload.error" 
-      type="error" 
-      :title="payload.error" 
-      :closable="false" 
-      show-icon 
-    />
+    <div v-if="payload && payload.error" class="predict-error-state">
+      <div class="predict-error-icon">💡</div>
+      <div class="predict-error-text">{{ payload.error }}</div>
+    </div>
     
     <!-- 空状态 -->
     <div v-else-if="!hasData" class="empty-state">
@@ -516,5 +513,22 @@ export default {
     width: 28px;
     height: 60px;
   }
+}
+
+.predict-error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 36px 20px;
+  text-align: center;
+  gap: 10px;
+}
+.predict-error-icon { font-size: 36px; opacity: 0.5; }
+.predict-error-text {
+  font-size: 13px;
+  color: #909399;
+  max-width: 300px;
+  line-height: 1.7;
 }
 </style>
