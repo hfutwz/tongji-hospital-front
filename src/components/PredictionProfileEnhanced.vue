@@ -1,10 +1,18 @@
 <template>
   <div class="profile-enhanced">
-    <!-- 错误提示 -->
+    <!-- 无数据提示（该地区暂无历史记录，友好提示非报错） -->
+    <div v-if="profile && profile.no_data" class="no-data-state">
+      <div class="no-data-icon">🗺️</div>
+      <div class="no-data-title">暂无该地区数据</div>
+      <div class="no-data-desc">{{ profile.reason || `${profile.district || '所选地区'}暂无历史创伤记录，随着数据积累将逐步完善` }}</div>
+      <div class="no-data-hint">💡 可切换至其他地区，或选择「全市」查看整体分布</div>
+    </div>
+
+    <!-- 错误提示（真实网络/服务异常） -->
     <el-alert 
-      v-if="profile && profile.error" 
-      type="error" 
-      :title="profile.error" 
+      v-else-if="profile && profile.error" 
+      type="warning"
+      :title="'数据加载失败：' + profile.error" 
       :closable="false" 
       show-icon 
     />
@@ -484,5 +492,43 @@ export default {
   .word-item {
     padding: 8px 14px;
   }
+}
+
+/* 无数据状态 */
+.no-data-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+  gap: 12px;
+}
+
+.no-data-icon {
+  font-size: 48px;
+  opacity: 0.6;
+}
+
+.no-data-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #606266;
+}
+
+.no-data-desc {
+  font-size: 13px;
+  color: #909399;
+  max-width: 320px;
+  line-height: 1.6;
+}
+
+.no-data-hint {
+  font-size: 12px;
+  color: #b0b8c1;
+  background: #f5f7fa;
+  border-radius: 8px;
+  padding: 8px 16px;
+  margin-top: 4px;
 }
 </style>
