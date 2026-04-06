@@ -38,7 +38,7 @@
                 </el-select>
               </el-form-item>
               <el-form-item>
-                <el-button type="primary" :loading="loading.t1" @click="fetchType1">查询</el-button>
+                <el-button type="primary" :loading="loading.t1" @click="fetchType1">预测</el-button>
               </el-form-item>
             </el-form>
             <prediction-result-block :value="payloads.t1" />
@@ -47,7 +47,7 @@
 
         <!-- 2. 伤因 → 时段 / 季节 / 地区分布 -->
         <el-tab-pane label="伤因 → 时空分布" name="t2">
-          <p class="tab-desc">选择伤因，查看该伤因在时段、季节及各区县历史分布（并行请求现有接口）。</p>
+          <p class="tab-desc">选择伤因（可选「全部」），查看该伤因在时段、季节及各区县的分布预测。</p>
           <div class="tab-form">
             <el-form :inline="true" size="small" @submit.native.prevent>
               <el-form-item label="伤因">
@@ -56,7 +56,7 @@
                 </el-select>
               </el-form-item>
               <el-form-item>
-                <el-button type="primary" :loading="loading.t2" @click="fetchType2">查询</el-button>
+                <el-button type="primary" :loading="loading.t2" @click="fetchType2">预测</el-button>
               </el-form-item>
             </el-form>
             <prediction-triple-distribution-block :payload="payloads.t2" />
@@ -65,13 +65,13 @@
 
         <!-- 3. 地区 → 时段 / 季节 / 伤因分布 -->
         <el-tab-pane label="地区 → 时序与伤因" name="t3">
-          <p class="tab-desc">选择地区，查看该地区在时段、季节及伤因上的历史占比（季节在无联合表时为统计近似）。</p>
+          <p class="tab-desc">选择地区（可选「全部」），查看该地区在时段、季节及伤因上的历史占比（季节在无联合表时为统计近似）。</p>
           <div class="tab-form">
             <el-form :inline="true" size="small" @submit.native.prevent>
               <el-form-item label="地区">
                 <el-select v-model="forms.t3.district" placeholder="地区" filterable style="width: 220px">
                   <el-option
-                    v-for="o in districtOptionsConcrete"
+                    v-for="o in districtOptions"
                     :key="'t3d-' + o.v"
                     :label="o.l"
                     :value="o.v"
@@ -79,7 +79,7 @@
                 </el-select>
               </el-form-item>
               <el-form-item>
-                <el-button type="primary" :loading="loading.t3" @click="fetchType3">查询</el-button>
+                <el-button type="primary" :loading="loading.t3" @click="fetchType3">预测</el-button>
               </el-form-item>
             </el-form>
             <prediction-district-profile-block :profile="payloads.t3" />
@@ -88,13 +88,13 @@
 
         <!-- 4. 时段 + 伤因 → 地区分布 -->
         <el-tab-pane label="时段+伤因 → 地区" name="t4">
-          <p class="tab-desc">在给定时段与伤因下，查看各区县的原始发生人次（与「各区域伤情分布」一致为计数）。</p>
+          <p class="tab-desc">在给定时段与伤因下（均可选「全部」），查看各区县的原始发生人次分布。</p>
           <div class="tab-form">
             <el-form :inline="true" size="small" @submit.native.prevent>
               <el-form-item label="时段">
                 <el-select v-model="forms.t4.timePeriod" placeholder="时段" style="width: 200px">
                   <el-option
-                    v-for="o in timePeriodOptionsConcrete"
+                    v-for="o in timePeriodOptions"
                     :key="'t4tp-' + o.v"
                     :label="o.l"
                     :value="o.v"
@@ -107,7 +107,7 @@
                 </el-select>
               </el-form-item>
               <el-form-item>
-                <el-button type="primary" :loading="loading.t4" @click="fetchType4">查询</el-button>
+                <el-button type="primary" :loading="loading.t4" @click="fetchType4">预测</el-button>
               </el-form-item>
             </el-form>
             <prediction-result-block :value="payloads.t4" />
@@ -155,13 +155,13 @@ export default {
       injuryCauseOptions: INJURY_CAUSE_OPTIONS,
       forms: {
         t1: {
-          timePeriod: 3,
+          timePeriod: PREDICTION_ALL,
           season: PREDICTION_ALL,
           district: PREDICTION_ALL
         },
-        t2: { injuryCause: 0 },
-        t3: { district: '宝山区' },
-        t4: { timePeriod: 3, injuryCause: 0 }
+        t2: { injuryCause: PREDICTION_ALL },
+        t3: { district: PREDICTION_ALL },
+        t4: { timePeriod: PREDICTION_ALL, injuryCause: PREDICTION_ALL }
       },
       loading: {
         t1: false,
@@ -177,14 +177,7 @@ export default {
       }
     }
   },
-  computed: {
-    districtOptionsConcrete() {
-      return DISTRICT_OPTIONS.filter((o) => o.v !== PREDICTION_ALL)
-    },
-    timePeriodOptionsConcrete() {
-      return TIME_PERIOD_OPTIONS.filter((o) => o.v !== PREDICTION_ALL)
-    }
-  },
+  computed: {},
   methods: {
     toastError(msg) {
       this.$message.error(msg || '请求失败')
@@ -217,15 +210,15 @@ export default {
     },
     async fetchType2() {
       const c = this.forms.t2.injuryCause
-      if (c === PREDICTION_ALL || c === '' || c == null) {
-        this.$message.warning('请选择具体伤因')
-        return
-      }
+      // 全选时 injury_cause 传 null
+      const causeParam = (c === PREDICTION_ALL || c === '' || c == null) ? null : c
       this.loading.t2 = true
       try {
+        const params1 = causeParam !== null ? { injury_cause: causeParam } : {}
+        const params2 = causeParam !== null ? { injury_cause: causeParam } : {}
         const [r1, r2] = await Promise.all([
-          this.$axios.get('/api/prediction/time-distribution', { params: { injury_cause: c } }),
-          this.$axios.get('/api/prediction/district-distribution', { params: { injury_cause: c } })
+          this.$axios.get('/api/prediction/time-distribution', { params: params1 }),
+          this.$axios.get('/api/prediction/district-distribution', { params: params2 })
         ])
         const d1 = unwrap(r1)
         const d2 = unwrap(r2)
@@ -249,16 +242,13 @@ export default {
       }
     },
     async fetchType3() {
-      const d = (this.forms.t3.district || '').trim()
-      if (!d) {
-        this.$message.warning('请选择地区')
-        return
-      }
+      const raw = this.forms.t3.district
+      // 全选时 district 传 null
+      const districtParam = (raw === PREDICTION_ALL || raw === '' || raw == null) ? null : String(raw).trim()
       this.loading.t3 = true
       try {
-        const res = await this.$axios.get('/api/prediction/district-profile', {
-          params: { district: d }
-        })
+        const params = districtParam !== null ? { district: districtParam } : {}
+        const res = await this.$axios.get('/api/prediction/district-profile', { params })
         const data = unwrap(res)
         if (data && data.error) {
           this.payloads.t3 = { error: data.error }
@@ -275,15 +265,16 @@ export default {
     },
     async fetchType4() {
       const tp = this.forms.t4.timePeriod
-      if (tp === PREDICTION_ALL || tp == null) {
-        this.$message.warning('请选择具体时段')
-        return
-      }
+      const ic = this.forms.t4.injuryCause
+      // 全选时传 null
+      const timePeriodParam = (tp === PREDICTION_ALL || tp == null) ? null : tp
+      const injuryCauseParam = (ic === PREDICTION_ALL || ic === '' || ic == null) ? null : ic
       this.loading.t4 = true
       try {
-        const res = await this.$axios.get('/api/prediction/district-by-period-cause', {
-          params: { time_period: tp, injury_cause: this.forms.t4.injuryCause }
-        })
+        const params = {}
+        if (timePeriodParam !== null) params.time_period = timePeriodParam
+        if (injuryCauseParam !== null) params.injury_cause = injuryCauseParam
+        const res = await this.$axios.get('/api/prediction/district-by-period-cause', { params })
         const data = unwrap(res)
         if (data && data.error) {
           this.payloads.t4 = data

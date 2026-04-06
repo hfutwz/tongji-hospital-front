@@ -43,6 +43,7 @@ export const TIME_PERIOD_OPTIONS = [
 ]
 
 export const INJURY_CAUSE_OPTIONS = [
+  { v: PREDICTION_ALL, l: '全部' },
   { v: 0, l: '交通伤' },
   { v: 1, l: '高坠伤' },
   { v: 2, l: '机械伤' },
