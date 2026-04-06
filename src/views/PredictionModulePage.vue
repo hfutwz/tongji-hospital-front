@@ -9,17 +9,63 @@
         </h1>
         <p class="hero-subtitle">基于历史数据的时空因导智能预测</p>
       </div>
-      <div class="hero-stats" v-if="modelStatus">
-        <div class="stat-item">
-          <div class="stat-value">{{ modelStatus.sample_count || '-' }}</div>
-          <div class="stat-label">训练样本</div>
+      <div class="hero-right">
+        <div class="hero-stats" v-if="modelStatus">
+          <div class="stat-item">
+            <div class="stat-value">{{ formatNumber(modelStatus.sample_count) || '-' }}</div>
+            <div class="stat-label">训练样本</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value">{{ modelStatus.version || '-' }}</div>
+            <div class="stat-label">模型版本</div>
+          </div>
         </div>
-        <div class="stat-item">
-          <div class="stat-value">{{ modelStatus.version || '-' }}</div>
-          <div class="stat-label">模型版本</div>
+        <!-- 模型训练控制 -->
+        <div class="model-control">
+          <el-dropdown trigger="click" @command="handleTrainingCommand">
+            <button class="control-btn" :class="{ 'is-training': training.loading }">
+              <span class="btn-icon">⚙️</span>
+              <span class="btn-text">模型训练</span>
+              <i class="el-icon-arrow-down el-icon--right"></i>
+            </button>
+            <el-dropdown-menu slot="dropdown">
+              <el-dropdown-item command="full">
+                <span class="dropdown-icon">🔄</span>
+                <div class="dropdown-content">
+                  <div class="dropdown-title">全量训练</div>
+                  <div class="dropdown-desc">使用全部历史数据重新训练模型</div>
+                </div>
+              </el-dropdown-item>
+              <el-dropdown-item command="incremental">
+                <span class="dropdown-icon">⬆️</span>
+                <div class="dropdown-content">
+                  <div class="dropdown-title">增量训练</div>
+                  <div class="dropdown-desc">仅训练新增数据，更新现有模型</div>
+                </div>
+              </el-dropdown-item>
+              <el-dropdown-item divided command="history">
+                <span class="dropdown-icon">📜</span>
+                <div class="dropdown-content">
+                  <div class="dropdown-title">训练历史</div>
+                  <div class="dropdown-desc">查看模型版本历史记录</div>
+                </div>
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </el-dropdown>
         </div>
       </div>
     </div>
+
+    <!-- 训练状态提示 -->
+    <el-alert
+      v-if="training.message"
+      :title="training.message"
+      :type="training.type"
+      :closable="true"
+      @close="training.message = ''"
+      show-icon
+      class="training-alert"
+    />
 
     <!-- 预测卡片网格 -->
     <div class="prediction-grid">
@@ -200,15 +246,119 @@ export default {
         t3: null,
         t4: null
       },
-      modelStatus: null
+      modelStatus: null,
+      training: {
+        loading: false,
+        message: '',
+        type: 'info'
+      }
     }
   },
   mounted() {
     this.fetchModelStatus()
   },
   methods: {
+    formatNumber(n) {
+      if (n == null) return '-'
+      return n.toLocaleString()
+    },
     toastError(msg) {
       this.$message.error(msg || '请求失败')
+    },
+    toastSuccess(msg) {
+      this.$message.success(msg || '操作成功')
+    },
+    async handleTrainingCommand(command) {
+      if (command === 'history') {
+        this.showTrainingHistory()
+        return
+      }
+      
+      const isFull = command === 'full'
+      const actionName = isFull ? '全量训练' : '增量训练'
+      
+      try {
+        await this.$confirm(
+          `确定要执行${actionName}吗？${isFull ? '这将使用全部历史数据重新训练模型，可能需要一些时间。' : '这将使用新增数据更新模型。'}`,
+          `${actionName}确认`,
+          {
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'warning'
+          }
+        )
+      } catch {
+        return
+      }
+      
+      this.training.loading = true
+      this.training.message = `${actionName}进行中，请稍候...`
+      this.training.type = 'info'
+      
+      try {
+        const url = isFull 
+          ? '/api/prediction/model/sync'
+          : '/api/prediction/model/trigger-update'
+        
+        const res = await this.$axios.post(url)
+        const data = unwrap(res)
+        
+        if (data && data.error) {
+          this.training.message = `${actionName}失败：${data.error}`
+          this.training.type = 'error'
+          this.toastError(data.error)
+          return
+        }
+        
+        // 训练成功
+        const status = data?.status || 'success'
+        const delta = data?.delta || 0
+        const version = data?.version || 'unknown'
+        
+        if (status === 'success' || status === 'trained') {
+          this.training.message = `${actionName}成功！${delta > 0 ? `新增 ${delta} 条样本，` : ''}模型版本：${version}`
+          this.training.type = 'success'
+          this.toastSuccess(`${actionName}成功！模型已更新`)
+          // 刷新模型状态
+          await this.fetchModelStatus()
+        } else if (status === 'skipped') {
+          this.training.message = `${actionName}已跳过：${data.reason || '样本数量不足'}`
+          this.training.type = 'warning'
+        } else {
+          this.training.message = `${actionName}完成：${JSON.stringify(data)}`
+          this.training.type = 'info'
+        }
+      } catch (e) {
+        this.training.message = `${actionName}失败：${e.message || '网络错误'}`
+        this.training.type = 'error'
+        this.toastError(e.message)
+      } finally {
+        this.training.loading = false
+      }
+    },
+    async showTrainingHistory() {
+      try {
+        const res = await this.$axios.get('/api/prediction/model/history')
+        const data = unwrap(res)
+        
+        if (!data || data.error) {
+          this.toastError(data?.error || '获取历史记录失败')
+          return
+        }
+        
+        // 简化展示，实际可以做成弹窗表格
+        const history = Array.isArray(data) ? data : [data]
+        const historyText = history.map((h, i) => 
+          `${i + 1}. ${h.version || 'unknown'} - ${h.sample_count || 0}样本 - ${new Date(h.created_at || Date.now()).toLocaleString()}`
+        ).join('\n')
+        
+        this.$alert(historyText || '暂无历史记录', '模型训练历史', {
+          confirmButtonText: '确定',
+          callback: () => {}
+        })
+      } catch (e) {
+        this.toastError('获取训练历史失败')
+      }
     },
     async fetchModelStatus() {
       try {
@@ -374,9 +524,77 @@ export default {
   font-weight: 400;
 }
 
+.hero-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 16px;
+}
+
 .hero-stats {
   display: flex;
   gap: 24px;
+}
+
+.model-control {
+  margin-top: 8px;
+}
+
+.control-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 10px;
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s;
+  backdrop-filter: blur(8px);
+}
+
+.control-btn:hover {
+  background: rgba(255,255,255,0.25);
+  transform: translateY(-1px);
+}
+
+.control-btn.is-training {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.btn-icon {
+  font-size: 16px;
+}
+
+/* 下拉菜单样式 */
+.dropdown-icon {
+  font-size: 20px;
+  margin-right: 12px;
+}
+
+.dropdown-content {
+  flex: 1;
+}
+
+.dropdown-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #303133;
+  margin-bottom: 2px;
+}
+
+.dropdown-desc {
+  font-size: 12px;
+  color: #909399;
+}
+
+/* 训练状态提示 */
+.training-alert {
+  margin-bottom: 20px;
+  border-radius: 12px;
 }
 
 .stat-item {
@@ -441,6 +659,11 @@ export default {
     flex-direction: column;
     text-align: center;
     gap: 16px;
+  }
+  
+  .hero-right {
+    align-items: center;
+    width: 100%;
   }
   
   .hero-title {
