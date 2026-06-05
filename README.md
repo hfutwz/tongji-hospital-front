@@ -12,8 +12,10 @@
 | Vue Router | 3.6.5 | 路由管理（history 模式，含登录守卫） |
 | Element UI | 2.15.14 | UI 组件库 |
 | ECharts | 5.6.0 | 图表可视化（热力图、旭日图、分布图等） |
+| echarts-wordcloud | 2.1.0 | ECharts 词云扩展 |
 | Three.js | 0.180.0 | 3D 渲染（人体伤情图） |
 | axios | 1.11.0 | HTTP 请求（携带 credentials，Session 认证） |
+| serve | 14.2.5 | 静态文件服务（生产构建后本地预览） |
 | 腾讯地图 API | — | 地图热力图渲染 & 地理编码 |
 
 ---
@@ -163,7 +165,7 @@ src/
 ```bash
 npm install
 npm run serve
-# 访问 http://localhost:8080
+# 访问 http://localhost:8001
 # API 请求通过 vue.config.js proxy 转发到后端 http://localhost:9090
 ```
 
@@ -182,6 +184,14 @@ npm run build:prod
 | `VUE_APP_API_BASE_URL` | API 基础路径（生产留空，使用相对路径由 Nginx 代理） |
 | `VUE_APP_ENV` | 环境标识（development / production） |
 | `VUE_APP_DEBUG` | 开发环境调试日志开关 |
+
+### 本地预览生产构建
+
+```bash
+npm run build:prod
+npx serve dist -l 3000
+# 访问 http://localhost:3000
+```
 
 ---
 
